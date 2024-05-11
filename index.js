@@ -1,7 +1,7 @@
 
-const express = require('express')
+const express =require('express')
 const cors =require('cors')
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const app = express()
 const port = process.env.PORT || 5000
@@ -41,6 +41,28 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
+  const roomcollection = client.db('hotelhive').collection('data1')
+
+app.get('/featuredrooms', async(req,res)=>{
+ const result =await roomcollection.find().toArray()
+ res.send(result)
+
+})
+
+app.patch('/room/:id', async(req,res)=>{
+  const id = req.params.id 
+  const  Status = req.body 
+  const query = {_id : new ObjectId (id)}
+  const updatedoc ={
+    $set : {...Status}
+  }
+  const result = await roomcollection.updateOne(query,updatedoc)
+  res.send(result)
+})
+
+
+
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
