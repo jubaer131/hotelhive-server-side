@@ -14,6 +14,7 @@ app.use(
       origin: [
         "http://localhost:5173",
         "https://cardoctor-bd.web.app",
+        "http://localhost:5175"
         
       ],
       credentials: true,
@@ -40,16 +41,35 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    // await client.connect();
+    await client.connect();
   const roomcollection = client.db('hotelhive').collection('data1')
+  const roomdatacollection = client.db('hotelhive').collection('data2')
+  
 
-app.get('/featuredrooms', async(req,res)=>{
+app.get('/Rooms', async(req,res)=>{
  const result =await roomcollection.find().toArray()
  res.send(result)
 
 })
+app.get('/roompagedetail/:id', async(req,res)=>{
+  const id = req.params.id 
+  const query = {_id : new ObjectId (id)}
+ const result =await roomcollection.findOne(query)
+ res.send(result)
 
-app.patch('/room/:id', async(req,res)=>{
+})
+
+
+ app.get('/RoomsPage', async(req,res)=>{
+  const filter =req.query.filter
+  let query = {}
+  if(filter)query = {PricePerNight: filter}
+  const result = await roomcollection.find(query).toArray()
+  res.send(result)
+ })
+
+
+app.patch('/featured-rooms/:id', async(req,res)=>{
   const id = req.params.id 
   const  Status = req.body 
   const query = {_id : new ObjectId (id)}
@@ -60,6 +80,24 @@ app.patch('/room/:id', async(req,res)=>{
   res.send(result)
 })
 
+// datacollection-2
+
+app.post('/myrooms-data', async(req,res)=>{
+  const roomdata = req.body
+  console.log(roomdata)
+  const result = await roomdatacollection.insertOne(roomdata)
+  res.send(result)
+
+})
+// datacollection-3
+
+// app.post('/alluser-reiew', async(req,res)=>{
+//   const reviewdata = req.body
+//   console.log(reviewdata)
+//   const result = await reviewdatacollection.insertOne(reviewdata)
+//   res.send(result)
+
+// })
 
 
 
