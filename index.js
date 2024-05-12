@@ -13,8 +13,7 @@ app.use(
     cors({
       origin: [
         "http://localhost:5173",
-        "https://cardoctor-bd.web.app",
-        "http://localhost:5175"
+        "http://localhost:5175",
         
       ],
       credentials: true,
@@ -28,7 +27,7 @@ app.use(express.json())
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.8dssgfd.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 // const uri = "mongodb+srv://<username>:<password>@cluster0.8dssgfd.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-
+console.log(uri)
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
@@ -41,12 +40,12 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
   const roomcollection = client.db('hotelhive').collection('data1')
   const roomdatacollection = client.db('hotelhive').collection('data2')
-  
+  const reviewcollection =client.db('hotelhive').collection('review')
 
-app.get('/Rooms', async(req,res)=>{
+app.get('/our-roomdataall', async(req,res)=>{
  const result =await roomcollection.find().toArray()
  res.send(result)
 
@@ -68,11 +67,17 @@ app.get('/roompagedetail/:id', async(req,res)=>{
   res.send(result)
  })
 
+ app.get('/userreviewpost', async(req,res)=>{
+  const result =await reviewcollection.find().toArray()
+  res.send(result)
+ 
+ })
+
 
 app.patch('/featured-rooms/:id', async(req,res)=>{
   const id = req.params.id 
   const  Status = req.body 
-  const query = {_id : new ObjectId (id)}
+  const query = {_id : new ObjectId(id)}
   const updatedoc ={
     $set : {...Status}
   }
@@ -91,13 +96,15 @@ app.post('/myrooms-data', async(req,res)=>{
 })
 // datacollection-3
 
-// app.post('/alluser-reiew', async(req,res)=>{
-//   const reviewdata = req.body
-//   console.log(reviewdata)
-//   const result = await reviewdatacollection.insertOne(reviewdata)
-//   res.send(result)
 
-// })
+
+app.post('/userreview', async(req,res)=>{
+  const reviewdata = req.body
+  console.log(reviewdata)
+  const result = await  reviewcollection.insertOne(reviewdata)
+  res.send(result)
+
+})
 
 
 
