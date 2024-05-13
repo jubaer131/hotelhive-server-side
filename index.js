@@ -73,6 +73,17 @@ app.get('/roompagedetail/:id', async(req,res)=>{
  
  })
 
+ app.get('/bookingroom/:email',async(req,res)=>{
+  const email = req.params.email 
+  console.log(email)
+  const query = {email:email}
+  const result = await roomdatacollection.find(query).toArray()
+  res.send(result)
+})
+
+
+
+
 
 app.patch('/featured-rooms/:id', async(req,res)=>{
   const id = req.params.id 
@@ -84,6 +95,38 @@ app.patch('/featured-rooms/:id', async(req,res)=>{
   const result = await roomcollection.updateOne(query,updatedoc)
   res.send(result)
 })
+app.patch('/booking-cancel/:id', async(req,res)=>{
+  const id = req.params.id 
+  const  Status = req.body 
+  console.log(Status)
+  const query = {_id : new ObjectId(id)}
+  const updatedoc ={
+    $set : {...Status}
+  }
+  const result = await roomcollection.updateOne(query,updatedoc)
+  res.send(result)
+})
+
+
+app.put('/updatedate/:email', async (req, res) => {
+  const email = req.params.email;
+  console.log(email)
+  const filter = {email:email }
+  const options = { upsert: true }
+  const update = req.body;
+  console.log(update)
+  const sport = {
+      $set: {...update}
+          
+          
+      
+  }
+
+  const result = await roomdatacollection.updateOne(filter, sport, options);
+  res.send(result);
+})
+
+
 
 // datacollection-2
 
