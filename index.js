@@ -1,6 +1,8 @@
 
 const express =require('express')
 const cors =require('cors')
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const app = express()
@@ -8,18 +10,22 @@ const port = process.env.PORT || 5000
 
 
 // midle ware 
-//Must remove "/" from your production URL
+
 app.use(
     cors({
       origin: [
-        "http://localhost:5173",
-        "http://localhost:5175",
+        
+       
+        "https://wonderful-souffle-eaed92.netlify.app"
         
       ],
       credentials: true,
     })
   );
+
+// app.use(cors())
 app.use(express.json())
+app.use(cookieParser())
 
 
 
@@ -37,6 +43,32 @@ const client = new MongoClient(uri, {
   }
 });
 
+
+  // midle ware 
+  const logger = (req,res,next)=>{
+    console.log('log:info',req.method, req.url );
+    next();
+  }
+
+  const varifytoken = (req,res,next)=>{
+    const token = req?.cookies?.token;
+    // console.log('token in the middle ware', token)
+
+    if(!token){
+      return res.Status(401).send({message : 'unauthorized access'})
+    }
+
+    jwt.varify(token, process.env.ACCESS_TOKEN_SECRET,(err,decoded)=>{
+   if(err){
+    return res.Status(401).send({message:'unauthorize access'})
+   }
+   req.user = decoded;
+   next()
+    })
+   
+
+  }
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -45,6 +77,37 @@ async function run() {
   const roomdatacollection = client.db('hotelhive').collection('data2')
   const reviewcollection =client.db('hotelhive').collection('review')
 
+ //creating Token
+ 
+
+
+app.post("/jwt",logger,  async (req, res) => {
+  const user = req.body;
+  console.log("user for token", user);
+  const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
+
+  res.cookie("token", token,{
+    httpOnly:true,
+    secure:true,
+    sameSite:'none'
+  } )
+  .send({ success: true });
+});
+app.post("/logout", async (req, res) => {
+  const user = req.body;
+  console.log("logging out", user);
+  res
+    .clearCookie("token", { maxAge: 0 })
+    .send({ success: true });
+});
+
+
+
+
+
+
+
+  // services api 
 app.get('/our-roomdataall', async(req,res)=>{
  const result =await roomcollection.find().toArray()
  res.send(result)
@@ -58,9 +121,17 @@ app.get('/roompagedetail/:id', async(req,res)=>{
 
 })
 
+  
+// jwt token  
 
- app.get('/RoomsPage', async(req,res)=>{
+ app.get('/RoomsPage',logger,varifytoken, async(req,res)=>{
   const filter =req.query.filter
+  if(req.user.email !== req.query.email){
+    return res.status(403).send({
+      message : 'forbidden access'
+    })
+  }
+
   let query = {}
   if(filter)query = {PricePerNight: filter}
   const result = await roomcollection.find(query).toArray()
@@ -128,6 +199,7 @@ app.put('/updatedate/:email', async (req, res) => {
 
 
 
+
 // datacollection-2
 
 app.post('/myrooms-data', async(req,res)=>{
@@ -152,7 +224,7 @@ app.post('/userreview', async(req,res)=>{
 
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
